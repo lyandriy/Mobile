@@ -1,275 +1,281 @@
-// import 'package:flutter/material.dart';
-
-// void main() {
-//   runApp(const MaterialApp(home: CalculatorScreen()));
-// }
-
-// class CalculatorScreen extends StatefulWidget {
-//   const CalculatorScreen({super.key});
-
-//   @override
-//   State<CalculatorScreen> createState() => _CalculatorScreenState();
-// }
-
-// class _CalculatorScreenState extends State<CalculatorScreen> {
-//   String _expression = '0';
-//   String _result = '0';
-
-//   void _onButtonPressed(String label) {
-//     debugPrint('Button pressed: $label');
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.black,
-//       body: SafeArea(
-//         child: Column(
-//           children: [
-
-//             // --- DISPLAY ---
-//             TextField(
-//               readOnly: true,
-//               textAlign: TextAlign.right,
-//               decoration: InputDecoration(
-//                 hintText: _expression,
-//                 hintStyle: const TextStyle(color: Colors.white54, fontSize: 24),
-//                 border: InputBorder.none,
-//               ),
-//             ),
-//             TextField(
-//               readOnly: true,
-//               textAlign: TextAlign.right,
-//               decoration: InputDecoration(
-//                 hintText: _result,
-//                 hintStyle: const TextStyle(color: Colors.white, fontSize: 40),
-//                 border: InputBorder.none,
-//               ),
-//             ),
-
-//             // --- FILA 1 ---
-//             Row(
-//               children: [
-//                 _buildButton('AC', Colors.grey),
-//                 _buildButton('C', Colors.grey),
-//                 _buildButton('/', Colors.orange),
-//                 _buildButton('*', Colors.orange),
-//               ],
-//             ),
-
-//             // --- FILA 2 ---
-//             Row(
-//               children: [
-//                 _buildButton('7', Colors.grey),
-//                 _buildButton('8', Colors.grey),
-//                 _buildButton('9', Colors.grey),
-//                 _buildButton('-', Colors.orange),
-//               ],
-//             ),
-
-//             // --- FILA 3 ---
-//             Row(
-//               children: [
-//                 _buildButton('4', Colors.grey),
-//                 _buildButton('5', Colors.grey),
-//                 _buildButton('6', Colors.grey),
-//                 _buildButton('+', Colors.orange),
-//               ],
-//             ),
-
-//             // --- FILA 4 ---
-//             Row(
-//               children: [
-//                 _buildButton('1', Colors.grey),
-//                 _buildButton('2', Colors.grey),
-//                 _buildButton('3', Colors.grey),
-//                 _buildButton('=', Colors.green),
-//               ],
-//             ),
-
-//             // --- FILA 5 ---
-//             Row(
-//               children: [
-//                 _buildButton('0', Colors.grey),
-//                 _buildButton('.', Colors.grey),
-//               ],
-//             ),
-
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   // Funcion que crea un boton
-//   Widget _buildButton(String label, Color color) {
-//     return Expanded(
-//       child: Padding(
-//         padding: const EdgeInsets.all(4),
-//         child: ElevatedButton(
-//           style: ElevatedButton.styleFrom(
-//             backgroundColor: color,
-//             foregroundColor: Colors.white,
-//           ),
-//           onPressed: () => _onButtonPressed(label),
-//           child: Text(label, style: const TextStyle(fontSize: 28)),
-//         ),
-//       ),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
+import 'package:math_expressions/math_expressions.dart';
 
 void main() {
-  runApp(const MaterialApp(home: CalculatorScreen()));
+  runApp(const AppCalculator());
 }
 
-class CalculatorScreen extends StatefulWidget {
-  const CalculatorScreen({super.key});
+class AppCalculator extends StatelessWidget {
+  const AppCalculator({super.key});
 
   @override
-  State<CalculatorScreen> createState() => _CalculatorScreenState();
+  Widget build(BuildContext context) {
+    return const MaterialApp(home: Calculator());
+  }
 }
 
-class _CalculatorScreenState extends State<CalculatorScreen> {
-  String _expression = '0';
-  String _result = '0';
+class Calculator extends StatefulWidget {
+  const Calculator({super.key});
 
-  void _onButtonPressed(String label) {
-    debugPrint('Button pressed: $label');
+  @override
+  State<Calculator> createState() => _CalculatorState();
+}
+
+class _CalculatorState extends State<Calculator> {
+  String expression = "0";
+  String result = "0";
+
+  // Operators para saber si el último carácter es un operador
+  static const operators = {'+', '-', 'x', '/'};
+
+  void buttonPressed(String value) {
+    setState(() {
+      switch (value) {
+        case 'AC':
+          _clearAll();
+          break;
+        case 'C':
+          _deleteLast();
+          break;
+        case '=':
+          _evaluate();
+          break;
+        default:
+          _appendValue(value);
+      }
+    });
+  }
+
+  void _clearAll() {
+    expression = "0";
+    result = "0";
+  }
+
+  void _deleteLast() {
+    if (expression.length <= 1) {
+      expression = "0";
+    } else {
+      expression = expression.substring(0, expression.length - 1);
+      // Si quedó vacío o solo operador al inicio, resetea
+      if (expression.isEmpty) expression = "0";
+    }
+  }
+
+  void _appendValue(String value) {
+    // Normalizar: si la expresión es "0" y no es decimal ni operador, reemplazar
+    if (expression == "0" && value != '.' && !operators.contains(value)) {
+      // Permitir "-" para número negativo
+      if (value == '-') {
+        expression = "-";
+        return;
+      }
+      expression = value;
+      return;
+    }
+
+    // No permitir múltiples puntos decimales en el mismo número
+    if (value == '.') {
+      // Buscar el último número en la expresión
+      final lastNumber = _getLastNumber();
+      if (lastNumber.contains('.')) return; // ya tiene punto
+    }
+
+    // No permitir operador si ya hay operador al final (excepto "-" para negativo)
+    if (operators.contains(value)) {
+      if (expression.isEmpty) {
+        if (value == '-') {
+          expression = "-";
+          return;
+        }
+        return;
+      }
+      final lastChar = expression[expression.length - 1];
+      // Permitir "-" después de operador para números negativos
+      if (operators.contains(lastChar)) {
+        if (value == '-' && lastChar != '-') {
+          expression += value;
+          return;
+        }
+        // Reemplazar operador si es otro operador
+        if (value != '-') {
+          expression = expression.substring(0, expression.length - 1) + value;
+          return;
+        }
+        return; // evitar "--"
+      }
+    }
+
+    // No permitir punto si la expresión está vacía o termina en operador
+    if (value == '.') {
+      if (expression.isEmpty) {
+        expression = "0.";
+        return;
+      }
+      final lastChar = expression[expression.length - 1];
+      if (operators.contains(lastChar)) {
+        expression += "0.";
+        return;
+      }
+    }
+
+    expression += value;
+  }
+
+  String _getLastNumber() {
+    // Separar por operadores para obtener el último segmento numérico
+    final parts = expression.split(RegExp(r'(?<=[0-9)])[+x/]|(?<=[0-9)]) -'));
+    return parts.isNotEmpty ? parts.last : '';
+  }
+
+  void _evaluate() {
+    try {
+      // Reemplazar 'x' por '*' para math_expressions
+      String expr = expression.replaceAll('x', '*');
+
+      // Eliminar operador colgante al final
+      while (expr.isNotEmpty && operators.map((o) => o == 'x' ? '*' : o).contains(expr[expr.length - 1])) {
+        expr = expr.substring(0, expr.length - 1);
+      }
+      // Limpiar operadores colgantes con el set original
+      while (expr.isNotEmpty && (expr.endsWith('+') || expr.endsWith('-') || expr.endsWith('*') || expr.endsWith('/'))) {
+        expr = expr.substring(0, expr.length - 1);
+      }
+
+      if (expr.isEmpty || expr == '-') {
+        result = "Error";
+        return;
+      }
+
+      Parser parser = Parser();
+      Expression parsedExpr = parser.parse(expr);
+      ContextModel cm = ContextModel();
+      double evalResult = parsedExpr.evaluate(EvaluationType.REAL, cm);
+
+      // Verificar casos especiales
+      if (evalResult.isNaN || evalResult.isInfinite) {
+        result = evalResult.isInfinite ? "Cannot divide by 0" : "Error";
+        return;
+      }
+
+      // Evitar overflow / números absurdamente grandes
+      if (evalResult.abs() > 1e15) {
+        result = "Number too large";
+        return;
+      }
+
+      // Mostrar como entero si no tiene decimales significativos
+      if (evalResult == evalResult.truncateToDouble()) {
+        result = evalResult.toInt().toString();
+      } else {
+        // Limitar a 10 decimales y quitar ceros trailing
+        result = evalResult.toStringAsFixed(10).replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
+      }
+    } catch (e) {
+      result = "Error";
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF546E7A),
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Calculator'),
-        backgroundColor: const Color(0xFF455A64),
-        foregroundColor: Colors.white,
+        centerTitle: true,
+        backgroundColor: Colors.blue,
       ),
-      body: Column(
-        children: [
-
-          // --- DISPLAY ---
-          Container(
-            color: const Color(0xFF37474F),
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                TextField(
-                  readOnly: true,
-                  textAlign: TextAlign.right,
-                  decoration: InputDecoration(
-                    hintText: _expression,
-                    hintStyle: const TextStyle(color: Colors.white54, fontSize: 20),
-                    border: InputBorder.none,
-                  ),
-                ),
-                TextField(
-                  readOnly: true,
-                  textAlign: TextAlign.right,
-                  decoration: InputDecoration(
-                    hintText: _result,
-                    hintStyle: const TextStyle(color: Colors.white, fontSize: 32),
-                    border: InputBorder.none,
-                  ),
-                ),
-              ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Display de expresión
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Text(
+                expression,
+                textAlign: TextAlign.right,
+                style: const TextStyle(color: Colors.white70, fontSize: 28),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-
-          // --- BOTONES ---
-          Expanded(
-            child: Column(
-              children: [
-
-                // FILA 1
-                Expanded(
-                  child: Row(
-                    children: [
-                      _buildButton('7'),
-                      _buildButton('8'),
-                      _buildButton('9'),
-                      _buildButton('AC', color: Colors.red[300]!),
-                    ],
-                  ),
-                ),
-
-                // FILA 2
-                Expanded(
-                  child: Row(
-                    children: [
-                      _buildButton('4'),
-                      _buildButton('5'),
-                      _buildButton('6'),
-                      _buildButton('+', color: const Color(0xFF455A64)),
-                    ],
-                  ),
-                ),
-
-                // FILA 3
-                Expanded(
-                  child: Row(
-                    children: [
-                      _buildButton('1'),
-                      _buildButton('2'),
-                      _buildButton('3'),
-                      _buildButton('-', color: const Color(0xFF455A64)),
-                    ],
-                  ),
-                ),
-
-                // FILA 4
-                Expanded(
-                  child: Row(
-                    children: [
-                      _buildButton('0'),
-                      _buildButton('.'),
-                      _buildButton('=', color: const Color(0xFF455A64)),
-                      _buildButton('*', color: const Color(0xFF455A64)),
-                    ],
-                  ),
-                ),
-
-                // FILA 5
-                Expanded(
-                  child: Row(
-                    children: [
-                      _buildButton('C', color: Colors.red[200]!),
-                      _buildButton(''),
-                      _buildButton(''),
-                      _buildButton('/', color: const Color(0xFF455A64)),
-                    ],
-                  ),
-                ),
-
-              ],
+            // Display de resultado
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Text(
+                result,
+                textAlign: TextAlign.right,
+                style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-
-        ],
+            const Divider(color: Colors.grey),
+            Expanded(
+              child: Row(
+                children: [
+                  buildButton('7'),
+                  buildButton('8'),
+                  buildButton('9'),
+                  buildButton('C', color: Colors.orange),
+                  buildButton('AC', color: Colors.red),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Row(
+                children: [
+                  buildButton('4'),
+                  buildButton('5'),
+                  buildButton('6'),
+                  buildButton('+', color: Colors.blue),
+                  buildButton('-', color: Colors.blue),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Row(
+                children: [
+                  buildButton('1'),
+                  buildButton('2'),
+                  buildButton('3'),
+                  buildButton('x', color: Colors.blue),
+                  buildButton('/', color: Colors.blue),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Row(
+                children: [
+                  buildButton('0'),
+                  buildButton('.'),
+                  buildButton('00'),
+                  buildButton('=', color: Colors.green),
+                  buildButton(' '), // placeholder vacío
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildButton(String label, {Color color = const Color(0xFF607D8B)}) {
+  Widget buildButton(String label, {Color? color}) {
     return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(4),
+      child: SizedBox(
+        height: 80,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: color,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.zero,
             ),
+            minimumSize: Size.zero,
           ),
-          onPressed: label.isEmpty ? null : () => _onButtonPressed(label),
-          child: Text(label, style: const TextStyle(fontSize: 24)),
+          onPressed: label.trim().isEmpty ? null : () => buttonPressed(label),
+          child: Text(label, style: const TextStyle(fontSize: 20)),
         ),
       ),
     );
