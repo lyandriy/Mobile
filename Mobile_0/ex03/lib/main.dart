@@ -1,181 +1,5 @@
-// import 'package:flutter/material.dart';
-
-// void main() {
-//   runApp(const AppCalculator());
-// }
-
-// class AppCalculator extends StatelessWidget {
-//   const AppCalculator({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return const MaterialApp(home: Calculator());
-//   }
-// }
-
-// class Calculator extends StatefulWidget {
-//   const Calculator({super.key});
-
-//   @override
-//   State<Calculator> createState() => _CalculatorState();
-// }
-// class _CalculatorState  extends State<Calculator>{
-//   String expression = "0";
-//   String result = "0";
-
-//   static const operators = {'+', '-', 'x', '/'};
-
-//   void ButtonPressed(String value)  {
-//     setState(() {
-//       switch (value) {
-//         case 'AC':
-//           _clearAll();
-//         case 'C':
-//           _deleteLast();
-//         case '=':
-//           _evaluate();
-//           break;
-//         default:
-//           _appendValue(value);
-//       }
-//     });
-
-//     void _clearAll()  {
-//       expression = "0";
-//       result = "0";
-//     }
-
-//     void _deleteLast()  {
-//       if (expression.length <= 1) {
-//         expression = "0";
-//       }
-//       else {
-//         expression = expression.substring(0, expression.length - 1);
-//       }
-//     }
-
-//     void _appendValue(String value) {
-//       //entra con primer numero, excepto el '.', tambien deja poner solo '-'
-//       if (expression == "0" && value != '.') {
-//         if (value == '+' || value == 'x' || value == '/') return;
-//         expression = value;
-//         return;
-//       }
-
-//       //no dejar poner mas de un '.' por numero
-//       if (value == '.') {
-//         final lastNumber = expression.split(RegExp(r'[+\-x/]')).last;
-//         if (lastNumber.contains('.')) return;
-//       }
-
-//       //
-//       final lastChar = expression[expression.length - 1];
-//       if (operador.contains(lastChar))  {
-//         if (value == '-' && lastChar != '-')
-//       }
-//     }
-//   }
-  
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//         backgroundColor: Colors.black,
-//         appBar: AppBar(
-//           title: const Text('Calculator'),
-//           centerTitle: true,
-//           backgroundColor: Colors.blue,
-//         ),
-//         body: SafeArea(
-//           child: Column(
-//             children: [
-//               TextField(
-//                 readOnly: true,
-//                 textAlign: TextAlign.right,
-//                 decoration: InputDecoration(
-//                   hintText: expression,
-//                   hintStyle: const TextStyle(color: Colors.white, fontSize: 32),
-//                 ),
-//               ),
-//               TextField(
-//                 readOnly: true,
-//                 textAlign: TextAlign.right,
-//                 decoration: InputDecoration(
-//                   hintText: result,
-//                   hintStyle: const TextStyle(color: Colors.white, fontSize: 32),
-//                 ),
-//               ),
-//               Expanded(
-//                 child: Row(
-//                   children: [
-//                     buildButton('7'),
-//                     buildButton('8'),
-//                     buildButton('9'),
-//                     buildButton('C', color: Colors.orange),
-//                     buildButton('AC', color: Colors.red),
-//                   ],
-//                 ),
-//               ),
-//               Expanded(
-//                 child: Row(
-//                   children: [
-//                     buildButton('4'),
-//                     buildButton('5'),
-//                     buildButton('6'),
-//                     buildButton('+', color: Colors.blue),
-//                     buildButton('-', color: Colors.blue),
-//                   ],
-//                 ),
-//               ),
-//               Expanded(
-//                 child: Row(
-//                   children: [
-//                     buildButton('1'),
-//                     buildButton('2'),
-//                     buildButton('3'),
-//                     buildButton('x', color: Colors.blue),
-//                     buildButton('/', color: Colors.blue),
-//                   ],
-//                 ),
-//               ),
-//               Expanded(
-//                 child: Row(
-//                   children: [
-//                     buildButton('0'),
-//                     buildButton('.'),
-//                     buildButton('00'),
-//                     buildButton('=', color: Colors.green),
-//                     buildButton(' '),
-//                   ],
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
-//     );
-//   }
-
-//   Widget buildButton(String label), {Color? color} {
-//     return Expanded(
-//       child: SizedBox(
-//         height: 80,
-//         child: ElevatedButton(
-//           style: ElevatedButton.styleFrom(
-//             backgroundColor: color,
-//             shape: RoundedRectangleBorder(
-//               borderRadius: BorderRadius.zero,
-//             ),
-//             minimumSize: Size.zero,
-//           ),
-//           onPressed: label.isEmpty ? null : () => ButtonPressed(label),
-//           child: Text(label, style: const TextStyle(fontSize: 20)),
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-import 'package:flutter/material.dart';
 import 'package:math_expressions/math_expressions.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   runApp(const AppCalculator());
@@ -186,7 +10,8 @@ class AppCalculator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(home: Calculator());
+    return const MaterialApp(debugShowCheckedModeBanner: false,
+    home: Calculator());
   }
 }
 
@@ -196,237 +21,200 @@ class Calculator extends StatefulWidget {
   @override
   State<Calculator> createState() => _CalculatorState();
 }
-
-class _CalculatorState extends State<Calculator> {
+class _CalculatorState  extends State<Calculator>{
   String expression = "0";
   String result = "0";
 
-  // Operators para saber si el último carácter es un operador
   static const operators = {'+', '-', 'x', '/'};
 
-  void buttonPressed(String value) {
+  void ButtonPressed(String value)  {
+    if (value.trim().isEmpty) return;
+
     setState(() {
-      switch (value) {
-        case 'AC':
-          _clearAll();
-          break;
-        case 'C':
-          _deleteLast();
-          break;
-        case '=':
-          _evaluate();
-          break;
-        default:
-          _appendValue(value);
+      if (value == 'AC') {
+        expression = "0";
+        result = "0";
+        return;
       }
+
+      if (value == 'C') {
+        if (expression.length > 1) {
+          expression = expression.substring(0, expression.length - 1);
+        } else {
+          expression = "0";
+        }
+        return;
+      }
+
+      if (value == '=') {
+        _calculateResult();
+        return;
+      }
+      _appendValue(value);
     });
   }
 
-  void _clearAll() {
-    expression = "0";
-    result = "0";
-  }
-
-  void _deleteLast() {
-    if (expression.length <= 1) {
-      expression = "0";
-    } else {
-      expression = expression.substring(0, expression.length - 1);
-      // Si quedó vacío o solo operador al inicio, resetea
-      if (expression.isEmpty) expression = "0";
-    }
-  }
-
   void _appendValue(String value) {
-    // Normalizar: si la expresión es "0" y no es decimal ni operador, reemplazar
-    if (expression == "0" && value != '.' && !operators.contains(value)) {
-      // Permitir "-" para número negativo
-      if (value == '-') {
-        expression = "-";
+    if (expression == "0" && value != '.') {
+      if (value == '+' || value == 'x' || value == '/') {
+        expression += value;
         return;
       }
       expression = value;
       return;
     }
 
-    // No permitir múltiples puntos decimales en el mismo número
     if (value == '.') {
-      // Buscar el último número en la expresión
       final lastNumber = _getLastNumber();
-      if (lastNumber.contains('.')) return; // ya tiene punto
+      if (lastNumber.contains('.')) return;
     }
 
-    // No permitir operador si ya hay operador al final (excepto "-" para negativo)
+    final lastChar = expression[expression.length - 1];
+
     if (operators.contains(value)) {
-      if (expression.isEmpty) {
-        if (value == '-') {
-          expression = "-";
-          return;
-        }
-        return;
-      }
-      final lastChar = expression[expression.length - 1];
-      // Permitir "-" después de operador para números negativos
       if (operators.contains(lastChar)) {
-        if (value == '-' && lastChar != '-') {
+        if (value == '-') {
+          if (lastChar == '-') {
+            if (expression.length >= 2) {
+              final char = expression[expression.length - 2];
+              if (!operators.contains(char))
+                expression += value;
+            }
+            return;
+          }
           expression += value;
           return;
         }
-        // Reemplazar operador si es otro operador
-        if (value != '-') {
-          expression = expression.substring(0, expression.length - 1) + value;
-          return;
-        }
-        return; // evitar "--"
-      }
-    }
-
-    // No permitir punto si la expresión está vacía o termina en operador
-    if (value == '.') {
-      if (expression.isEmpty) {
-        expression = "0.";
-        return;
-      }
-      final lastChar = expression[expression.length - 1];
-      if (operators.contains(lastChar)) {
-        expression += "0.";
+        expression =
+          expression.substring(0, expression.length - 1) + value;
         return;
       }
     }
-
     expression += value;
   }
 
   String _getLastNumber() {
-    // Separar por operadores para obtener el último segmento numérico
-    final parts = expression.split(RegExp(r'(?<=[0-9)])[+x/]|(?<=[0-9)]) -'));
-    return parts.isNotEmpty ? parts.last : '';
+    final regex = RegExp(r'(\d+\.?\d*)$');
+    final match = regex.firstMatch(expression);
+    return match?.group(0) ?? "";
   }
 
-  void _evaluate() {
+  void _calculateResult() {
     try {
-      // Reemplazar 'x' por '*' para math_expressions
-      String expr = expression.replaceAll('x', '*');
-
-      // Eliminar operador colgante al final
-      while (expr.isNotEmpty && operators.map((o) => o == 'x' ? '*' : o).contains(expr[expr.length - 1])) {
-        expr = expr.substring(0, expr.length - 1);
-      }
-      // Limpiar operadores colgantes con el set original
-      while (expr.isNotEmpty && (expr.endsWith('+') || expr.endsWith('-') || expr.endsWith('*') || expr.endsWith('/'))) {
-        expr = expr.substring(0, expr.length - 1);
-      }
-
-      if (expr.isEmpty || expr == '-') {
-        result = "Error";
-        return;
-      }
+      String exp = expression.replaceAll('x', '*');
 
       Parser parser = Parser();
-      Expression parsedExpr = parser.parse(expr);
-      ContextModel cm = ContextModel();
-      double evalResult = parsedExpr.evaluate(EvaluationType.REAL, cm);
+      Expression parsedExpression = parser.parse(exp);
 
-      // Verificar casos especiales
-      if (evalResult.isNaN || evalResult.isInfinite) {
-        result = evalResult.isInfinite ? "Cannot divide by 0" : "Error";
-        return;
-      }
+      double eval = parsedExpression.evaluate(EvaluationType.REAL, ContextModel(),);
 
-      // Evitar overflow / números absurdamente grandes
-      if (evalResult.abs() > 1e15) {
-        result = "Number too large";
-        return;
-      }
+      setState(() {
+        if (eval.isInfinite || eval.isNaN) {
+          result = "Error";
+          return;
+        }
 
-      // Mostrar como entero si no tiene decimales significativos
-      if (evalResult == evalResult.truncateToDouble()) {
-        result = evalResult.toInt().toString();
-      } else {
-        // Limitar a 10 decimales y quitar ceros trailing
-        result = evalResult.toStringAsFixed(10).replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
-      }
-    } catch (e) {
-      result = "Error";
+        if (eval == eval.toInt()) {
+          result = eval.toInt().toString();
+        } else {
+          result = eval.toString();
+        }
+      });
+    } catch (_) {
+      setState(() {
+        result = "Error";
+      });
     }
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text('Calculator'),
-        centerTitle: true,
-        backgroundColor: Colors.blue,
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            TextField(
-              readOnly: true,
-              textAlign: TextAlign.right,
-              decoration: InputDecoration(
-                hintText: expression,
-                hintStyle: const TextStyle(color: Colors.white70, fontSize: 28),
-              ),
-            ),
-            TextField(
-              readOnly: true,
-              textAlign: TextAlign.right,
-              decoration: InputDecoration(
-                hintText: result,
-                hintStyle: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const Divider(color: Colors.grey),
-            Expanded(
-              child: Row(
-                children: [
-                  buildButton('7'),
-                  buildButton('8'),
-                  buildButton('9'),
-                  buildButton('C', color: Colors.orange),
-                  buildButton('AC', color: Colors.red),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Row(
-                children: [
-                  buildButton('4'),
-                  buildButton('5'),
-                  buildButton('6'),
-                  buildButton('+', color: Colors.blue),
-                  buildButton('-', color: Colors.blue),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Row(
-                children: [
-                  buildButton('1'),
-                  buildButton('2'),
-                  buildButton('3'),
-                  buildButton('x', color: Colors.blue),
-                  buildButton('/', color: Colors.blue),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Row(
-                children: [
-                  buildButton('0'),
-                  buildButton('.'),
-                  buildButton('00'),
-                  buildButton('=', color: Colors.green),
-                  buildButton(' '), // placeholder vacío
-                ],
-              ),
-            ),
-          ],
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          title: const Text('Calculator'),
+          centerTitle: true,
+          backgroundColor: Colors.blue,
         ),
-      ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    expression,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    result,
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 24,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Expanded(
+                child: Row(
+                  children: [
+                    buildButton('7'),
+                    buildButton('8'),
+                    buildButton('9'),
+                    buildButton('C', color: Colors.orange),
+                    buildButton('AC', color: Colors.red),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Row(
+                  children: [
+                    buildButton('4'),
+                    buildButton('5'),
+                    buildButton('6'),
+                    buildButton('+', color: Colors.blue),
+                    buildButton('-', color: Colors.blue),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Row(
+                  children: [
+                    buildButton('1'),
+                    buildButton('2'),
+                    buildButton('3'),
+                    buildButton('x', color: Colors.blue),
+                    buildButton('/', color: Colors.blue),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Row(
+                  children: [
+                    buildButton('0'),
+                    buildButton('.'),
+                    buildButton('00'),
+                    buildButton('=', color: Colors.green),
+                    buildButton(' '),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
     );
   }
 
@@ -436,13 +224,13 @@ class _CalculatorState extends State<Calculator> {
         height: 80,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: color,
-            shape: const RoundedRectangleBorder(
+            backgroundColor: color ?? Colors.grey,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.zero,
             ),
             minimumSize: Size.zero,
           ),
-          onPressed: label.trim().isEmpty ? null : () => buttonPressed(label),
+          onPressed: label.isEmpty ? null : () => ButtonPressed(label),
           child: Text(label, style: const TextStyle(fontSize: 20)),
         ),
       ),
