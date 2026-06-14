@@ -28,7 +28,7 @@ class _CalculatorState extends State<Calculator> {
   // Operators para saber si el último carácter es un operador
   static const operators = {'+', '-', 'x', '/'};
 
-  void buttonPressed(String value) {
+  void ButtonPressed(String value) {
     setState(() {
       switch (value) {
         case 'AC':
@@ -187,28 +187,20 @@ class _CalculatorState extends State<Calculator> {
       body: SafeArea(
         child: Column(
           children: [
-            // Display de expresión
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Text(
-                expression,
-                textAlign: TextAlign.right,
-                style: const TextStyle(color: Colors.white70, fontSize: 28),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+            TextField(
+              readOnly: true,
+              textAlign: TextAlign.right,
+              decoration: InputDecoration(
+                hintText: expression,
+                hintStyle: const TextStyle(color: Colors.white70, fontSize: 28),
               ),
             ),
-            // Display de resultado
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: Text(
-                result,
-                textAlign: TextAlign.right,
-                style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            TextField(
+              readOnly: true,
+              textAlign: TextAlign.right,
+              decoration: InputDecoration(
+                hintText: result,
+                hintStyle: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
               ),
             ),
             const Divider(color: Colors.grey),
@@ -274,7 +266,7 @@ class _CalculatorState extends State<Calculator> {
             ),
             minimumSize: Size.zero,
           ),
-          onPressed: label.trim().isEmpty ? null : () => buttonPressed(label),
+          onPressed: label.trim().isEmpty ? null : () => ButtonPressed(label),
           child: Text(label, style: const TextStyle(fontSize: 20)),
         ),
       ),
