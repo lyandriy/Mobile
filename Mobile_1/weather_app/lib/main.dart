@@ -30,7 +30,7 @@ class _WeatherPageState extends State<WeatherPage>
   final pages = [
     Center(child:Text("Currently", style: TextStyle(fontSize: 24))),
     Center(child: Text("Today", style: TextStyle(fontSize: 24))),
-    Center(child: Text(, style: TextStyle(fontSize: 24))),
+    Center(child: Text("Weekly", style: TextStyle(fontSize: 24))),
   ];
 
   @override
@@ -51,29 +51,28 @@ class _WeatherPageState extends State<WeatherPage>
       appBar: AppBar(
         actions: [
           IconButton(
-            icon: const Icon(Icon.search),
+            icon: const Icon(Icons.search),
           ),
         ],
         title: const TextField(
-          obscureText: true,
           decoration: InputDecoration(
             border: OutlineInputBorder(),
             labelText: 'Search city...',
           ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icon.my_location),
-            onPressed() {},
+            icon: const Icon(Icons.my_location),
+            onPressed: () {},
           ),
         ],
-      ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: pages,
       ),
       bottomNavigationBar: BottomAppBar(
-        child: tabBar(
+        child: TabBar(
           controller: _tabController,
           tabs: const[
             Tab(
