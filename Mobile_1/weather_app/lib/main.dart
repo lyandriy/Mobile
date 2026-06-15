@@ -28,9 +28,9 @@ class _WeatherPageState extends State<WeatherPage>
   late TabController _tabController;
 
   final pages = [
-    Center(child:Text("Currently")),
-    Center(child: Text("Today")),
-    Center(child: Text("Weekly")),
+    Center(child:Text("Currently", style: TextStyle(fontSize: 24))),
+    Center(child: Text("Today", style: TextStyle(fontSize: 24))),
+    Center(child: Text(, style: TextStyle(fontSize: 24))),
   ];
 
   @override
@@ -49,46 +49,47 @@ class _WeatherPageState extends State<WeatherPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        child: TextField(
+        actions: [
+          IconButton(
+            icon: const Icon(Icon.search),
+          ),
+        ],
+        title: const TextField(
           obscureText: true,
           decoration: InputDecoration(
             border: OutlineInputBorder(),
-            labelText: 'Search',
+            labelText: 'Search city...',
           ),
-        
+        actions: [
+          IconButton(
+            icon: const Icon(Icon.my_location),
+            onPressed() {},
+          ),
+        ],
       ),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+      body: TabBarView(
+        controller: _tabController,
+        children: pages,
+      ),
+      bottomNavigationBar: BottomAppBar(
+        child: tabBar(
+          controller: _tabController,
+          tabs: const[
+            Tab(
+              icon: Icon(Icons.cloud),
+              text: "Currently",
+            ),
+            Tab(
+              icon: Icon(Icons.today),
+              text: "Today",
+            ),
+            Tab(
+              icon: Icon(Icons.calendar_view_week),
+              text: "Weekly"
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
