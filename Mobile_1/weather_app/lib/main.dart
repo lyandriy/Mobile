@@ -33,6 +33,10 @@ class _WeatherPageState extends State<WeatherPage>
     Center(child: Text("Weekly", style: TextStyle(fontSize: 24))),
   ];
 
+  final TextEditingController _controller = TextEditingController();
+
+  String displayText = "";
+
   @override
   void initState() {
     super.initState();
@@ -42,51 +46,69 @@ class _WeatherPageState extends State<WeatherPage>
   @override
   void dispose() {
     _tabController.dispose();
+    _controller.dispose();
     super.dispose();
+  }
+
+  void useSearch() {
+    setState(() {
+      displayText = _controller.text;
+    });
+  }
+
+  void useGeo() {
+    setState(() {
+      displayText = "Geolocation";
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-          ),
-        ],
-        title: const TextField(
-          decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: 'Search city...',
-          ),
+        title: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                decoration: InputDecoracion(
+                  hintText: "Search city...",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: useSearch,
+            ),
+            IconButton(
+              icon: const Icon(Icons.my_location),
+              onPressed: useGeo,
+            ),
+          ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.my_location),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: TabBarView(
         controller: _tabController,
-        children: pages,
+        children: pages.map((tab) {
+          return Center(
+            child: Text(
+              desplayText.isEmpty
+                ? tab.child.toString()
+                : "${(tab as Center).child is Text ? (tab.child as Text).data : ''} - $displayText",
+              style: const TextStyle(fontSize: 24),
+            ),
+          ),
+        },).toList(),
       ),
+
       bottomNavigationBar: BottomAppBar(
         child: TabBar(
           controller: _tabController,
           tabs: const[
-            Tab(
-              icon: Icon(Icons.cloud),
-              text: "Currently",
-            ),
-            Tab(
-              icon: Icon(Icons.today),
-              text: "Today",
-            ),
-            Tab(
-              icon: Icon(Icons.calendar_view_week),
-              text: "Weekly"
-            ),
+            Tab(icon: Icon(Icons.cloud), text: "Currently"),
+            Tab(icon: Icon(Icons.today), text: "Today"),
+            Tab(icon: Icon(Icons.calendar_view_week), text: "Weekly"),
           ],
         ),
       ),
