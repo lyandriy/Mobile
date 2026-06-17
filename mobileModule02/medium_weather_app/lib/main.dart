@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 void main() {
   runApp(const AppWeather());
@@ -37,6 +38,9 @@ class _WeatherPageState extends State<WeatherPage>
 
   String displayText = "";
 
+  Position? position;
+  String errorMessage = "";
+
   @override
   void initState() {
     super.initState();
@@ -56,9 +60,45 @@ class _WeatherPageState extends State<WeatherPage>
     });
   }
 
-  void useGeo() {
+  Future<void> useGeo() async {
+
+    //ver si esta disponible GPS
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      setState(() {
+        errorMessage = "GPS disabled";
+      });
+      return;
+    }
+
+    //revisar si tenemos permisos para usarlo y tipo de denegacion
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+
+      if (permission == LocationPermission.denied) {
+        setState(() {
+          errorMessage = "Location permissions are denied";
+        });
+        return;
+      }
+      
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      setState(() {
+        errorMessage = "Location permissions are permanently denied, we cannot request permissions.";
+      });
+      return;
+    } 
+
+    //pedir posicion si nos dan permisos
+    Position currentPosition =  await Geolocator.getCurrentPosition();
+
     setState(() {
-      displayText = "Geolocation";
+      position = currentPosition;
+      displayText = "${currentPosition.latitude}, ${currentPosition.longitude}";
+      errorMessage = "";
     });
   }
 
@@ -92,12 +132,22 @@ class _WeatherPageState extends State<WeatherPage>
         controller: _tabController,
         children: pages.map((tab) {
           return Center(
-            child: Text(
-              displayText.isEmpty
-                ? tab
-                  : "$tab - $displayText",
-              style: const TextStyle(fontSize: 24),
-            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (errorMessage.isNotEmpty)
+                  Text(
+                    errorMessage,
+                    style: const TextStyle(color: Colors.red, fontSize: 18),
+                  )
+                else
+                  Text(
+                    displayText.isEmpty ? tab : "$tab\n$displayText",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 24),
+                  ),
+              ],
+            ), 
           );
         },).toList(),
       ),
