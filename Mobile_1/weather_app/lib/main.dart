@@ -28,9 +28,9 @@ class _WeatherPageState extends State<WeatherPage>
   late TabController _tabController;
 
   final pages = [
-    Center(child:Text("Currently", style: TextStyle(fontSize: 24))),
-    Center(child: Text("Today", style: TextStyle(fontSize: 24))),
-    Center(child: Text("Weekly", style: TextStyle(fontSize: 24))),
+    "Currently",
+    "Today",
+    "Weekly",
   ];
 
   final TextEditingController _controller = TextEditingController();
@@ -71,7 +71,7 @@ class _WeatherPageState extends State<WeatherPage>
             Expanded(
               child: TextField(
                 controller: _controller,
-                decoration: InputDecoracion(
+                decoration: InputDecoration(
                   hintText: "Search city...",
                   border: OutlineInputBorder(),
                 ),
@@ -93,12 +93,12 @@ class _WeatherPageState extends State<WeatherPage>
         children: pages.map((tab) {
           return Center(
             child: Text(
-              desplayText.isEmpty
-                ? tab.child.toString()
-                : "${(tab as Center).child is Text ? (tab.child as Text).data : ''} - $displayText",
+              displayText.isEmpty
+                ? tab
+                  : "$tab - $displayText",
               style: const TextStyle(fontSize: 24),
             ),
-          ),
+          );
         },).toList(),
       ),
 
