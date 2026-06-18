@@ -44,7 +44,10 @@ class _WeatherPageState extends State<WeatherPage>
   @override
   void initState() {
     super.initState();
+
     _tabController = TabController(length: 3, vsync: this);
+
+    useGeo();
   }
 
   @override
@@ -57,6 +60,7 @@ class _WeatherPageState extends State<WeatherPage>
   void useSearch() {
     setState(() {
       displayText = _controller.text;
+      errorMessage = "";
     });
   }
 
