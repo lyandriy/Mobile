@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const AppWeather());
@@ -28,7 +30,7 @@ class _WeatherPageState extends State<WeatherPage>
       with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  final pages = [
+  final List<String> pages = [
     "Currently",
     "Today",
     "Weekly",
@@ -57,11 +59,29 @@ class _WeatherPageState extends State<WeatherPage>
     super.dispose();
   }
 
-  void useSearch() {
+  void useSearch() async{
     setState(() {
-      displayText = _controller.text;
       errorMessage = "";
     });
+
+    await searchCity();
+    
+  }
+
+  Future<void> searchCity() async{
+    String city = _controller.text;
+
+    if (city.isEmpty) {
+      return;
+    }
+
+    final url = Uri.parse(
+      "https://geocoding-api.open-meteo.com/v1/search?name=$city&count=5"
+      );
+
+    final response = await http.get(url);
+
+    final data = jsonDecode(response.body);
   }
 
   Future<void> useGeo() async {
