@@ -69,6 +69,7 @@ class _WeatherPageState extends State<WeatherPage>
   Position? position;
   String errorMessage = "";
   List<City> cities = [];
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -143,7 +144,10 @@ class _WeatherPageState extends State<WeatherPage>
         errorMessage = "Connection error, please try again later";
       });
     }
-    //displayText = city;
+  }
+
+  void  suggestion() {
+
   }
 
   void selectCity(City city) {
@@ -205,7 +209,9 @@ class _WeatherPageState extends State<WeatherPage>
             Expanded(
               child: TextField(
                 controller: _controller,
-                //onChanged: onTypingChanged,
+                onChanged: (value) {
+                  suggestion();
+                },
                 decoration: InputDecoration(
                   hintText: "Search city...",
                   border: OutlineInputBorder(),
@@ -247,26 +253,6 @@ class _WeatherPageState extends State<WeatherPage>
         },).toList(),
       ),
 
-      // if (cities.isNotEmpty) {
-      //   Positioned.fill(
-      //     child: Container(
-      //       color: Colors.white,
-      //       child: ListView.builder(
-      //         itemCount: cities.length,
-      //         itemBuilder: (context, index) {
-      //           final city = cities[index];
-      //           return ListTile(
-      //             title: Text(city.name),
-      //             subtitle: Text("${city.region}, ${city.country}"),
-      //             onTap: () {
-      //               selectCity(city);
-      //             },
-      //           ),
-      //         },
-      //       ),
-      //     ),
-      //   ),
-      // },
       bottomNavigationBar: BottomAppBar(
         child: TabBar(
           controller: _tabController,
