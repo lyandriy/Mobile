@@ -19,6 +19,32 @@ class AppWeather extends StatelessWidget {
   }
 }
 
+class City {
+  final String name;
+  final String country;
+  final String region;
+  final double latitude;
+  final double longitude;
+
+  City({
+    required this.name,
+    required this.country,
+    required this.region,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  factory City.fromJson(Map<String,dynamic> json) {
+    return City(
+      name: json["name"],
+      country: json["country"],
+      region: json["admin1"] ?? "",
+      latitude: json["latitude"].toDouble(),
+      longitude: json["longitude"].toDouble(),
+    );
+  }
+}
+
 class WeatherPage extends StatefulWidget {
   const WeatherPage({super.key});
 
@@ -42,6 +68,7 @@ class _WeatherPageState extends State<WeatherPage>
 
   Position? position;
   String errorMessage = "";
+  List<City> cities = [];
 
   @override
   void initState() {
@@ -65,6 +92,10 @@ class _WeatherPageState extends State<WeatherPage>
     });
 
     await searchCity();
+
+    if (cities.isNotEmpty) {
+      selectCity(cities.first);
+    }
     
   }
 
@@ -72,6 +103,9 @@ class _WeatherPageState extends State<WeatherPage>
     String city = _controller.text;
 
     if (city.isEmpty) {
+      setState(() {
+        cities = [];
+      });
       return;
     }
 
@@ -79,9 +113,46 @@ class _WeatherPageState extends State<WeatherPage>
       "https://geocoding-api.open-meteo.com/v1/search?name=$city&count=5"
       );
 
-    final response = await http.get(url);
+    try {
+      final response = await http.get(url);
 
-    final data = jsonDecode(response.body);
+       if (response.statusCode != 200) {
+        throw Exception();
+      }
+
+      final data = jsonDecode(response.body);
+
+      if (data["results"] == null) {
+        setState(() {
+          cities = [];
+          errorMessage = "City not found";
+        });
+        return;
+      }
+      List<City> newCity = (data["results"] as List)
+      .map((item) => City.fromJson(item))
+      .toList();
+
+      setState(() {
+        cities = newCity;
+        errorMessage = "";
+      });
+    } catch (e) {
+       setState(() {
+        cities = [];
+        errorMessage = "Connection error, please try again later";
+      });
+    }
+    //displayText = city;
+  }
+
+  void selectCity(City city) {
+    setState(() {
+      cities = [];
+      _controller.text = city.name;
+      displayText = "${city.name}, ${city.region}, ${city.country}";
+      errorMessage = "";
+    });
   }
 
   Future<void> useGeo() async {
@@ -105,8 +176,7 @@ class _WeatherPageState extends State<WeatherPage>
           errorMessage = "Location permissions are denied";
         });
         return;
-      }
-      
+      } 
     }
 
     if (permission == LocationPermission.deniedForever) {
@@ -135,6 +205,7 @@ class _WeatherPageState extends State<WeatherPage>
             Expanded(
               child: TextField(
                 controller: _controller,
+                //onChanged: onTypingChanged,
                 decoration: InputDecoration(
                   hintText: "Search city...",
                   border: OutlineInputBorder(),
@@ -176,6 +247,26 @@ class _WeatherPageState extends State<WeatherPage>
         },).toList(),
       ),
 
+      // if (cities.isNotEmpty) {
+      //   Positioned.fill(
+      //     child: Container(
+      //       color: Colors.white,
+      //       child: ListView.builder(
+      //         itemCount: cities.length,
+      //         itemBuilder: (context, index) {
+      //           final city = cities[index];
+      //           return ListTile(
+      //             title: Text(city.name),
+      //             subtitle: Text("${city.region}, ${city.country}"),
+      //             onTap: () {
+      //               selectCity(city);
+      //             },
+      //           ),
+      //         },
+      //       ),
+      //     ),
+      //   ),
+      // },
       bottomNavigationBar: BottomAppBar(
         child: TabBar(
           controller: _tabController,
