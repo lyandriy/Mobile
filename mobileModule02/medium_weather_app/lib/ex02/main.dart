@@ -69,7 +69,7 @@ class _WeatherPageState extends State<WeatherPage>
   Position? position;
   String errorMessage = "";
   List<City> cities = [];
-  
+  Map<String, dynamic>? weatherData;
 
   @override
   void initState() {
@@ -134,16 +134,21 @@ class _WeatherPageState extends State<WeatherPage>
     });
   }
 
-  void selectCity(City city) {
-    setState(() {
-      displayText =
-          "${city.name}, ${city.region}, ${city.country}";
+  void selectCity(City city) async {
+    _controller.text = city.name;
 
-      _controller.text = city.name;
+    cities = [];
 
-      cities = [];
-    });
-  }
+    displayText =
+        "${city.name}, ${city.region}, ${city.country}";
+
+    await getWeather(
+      city.latitude,
+      city.longitude,
+    );
+
+    setState(() {});
+}
 
   Future<void> useGeo() async {
 
@@ -186,6 +191,26 @@ class _WeatherPageState extends State<WeatherPage>
     });
   }
 
+  Future<void> getWeather(double lat, double lon) async {
+  final url = Uri.parse(
+    "https://api.open-meteo.com/v1/forecast"
+    "?latitude=$lat"
+    "&longitude=$lon"
+    "&current=temperature_2m,wind_speed_10m,weather_code"
+    "&hourly=temperature_2m,wind_speed_10m,weather_code"
+    "&daily=temperature_2m_max,temperature_2m_min,weather_code"
+    "&forecast_days=7",
+  );
+
+  final response = await http.get(url);
+
+  if (response.statusCode == 200) {
+    setState(() {
+      weatherData = jsonDecode(response.body);
+    });
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -220,36 +245,9 @@ class _WeatherPageState extends State<WeatherPage>
         children: pages.map((tab) {
           return Column(
             children: [
-              const SizedBox(height: 20),
-              if (errorMessage.isNotEmpty)
-                Text(
-                  errorMessage,
-                  style: const TextStyle(color: Colors.red, fontSize: 18),
-                )
-              else
-                Text(
-                  displayText.isEmpty ? tab : "$tab\n$displayText",
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 24),
-                ),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: cities.length,
-                  itemBuilder: (context, index) {
-                    City city = cities[index];
-
-                    return ListTile(
-                      title: Text(city.name),
-                      subtitle: Text(
-                        "${city.region}, ${city.country}",
-                      ),
-                      onTap: () {
-                        selectCity(city);
-                      },
-                    );
-                  },
-                ),
-              ),
+              currentView(),
+              todayView(),
+              weeklyView(),
             ],
           );
         },).toList(),
@@ -265,6 +263,74 @@ class _WeatherPageState extends State<WeatherPage>
           ],
         ),
       ),
+    );
+  }
+
+  Widget currentView() {
+    if (weatherData == null) {
+      return const Center(
+        child: Text("No weather data"),
+      );
+    }
+
+    final current = weatherData!["current"];
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(displayText),
+        Text("Temp: ${current["temperature_2m"]} °C"),
+        Text("Wind: ${current["wind_speed_10m"]} km/h"),
+        Text("Code: ${current["weather_code"]}"),
+      ],
+    );
+  }
+
+  Widget todayView() {
+    if (weatherData == null) {
+      return const Center(
+        child: Text("No weather data"),
+      );
+    }
+
+    final hourly = weatherData!["hourly"];
+
+    return ListView.builder(
+      itemCount: 24,
+      itemBuilder: (context, index) {
+        return ListTile(
+          title: Text(hourly["time"][index]),
+          subtitle: Text(
+            "Temp: ${hourly["temperature_2m"][index]} °C"
+            " | Wind: ${hourly["wind_speed_10m"][index]} km/h"
+            " | Code: ${hourly["weather_code"][index]}",
+          ),
+        );
+      },
+    );
+  }
+
+  Widget weeklyView() {
+    if (weatherData == null) {
+      return const Center(
+        child: Text("No weather data"),
+      );
+    }
+
+    final daily = weatherData!["daily"];
+
+    return ListView.builder(
+      itemCount: daily["time"].length,
+      itemBuilder: (context, index) {
+        return ListTile(
+          title: Text(daily["time"][index]),
+          subtitle: Text(
+            "Min: ${daily["temperature_2m_min"][index]} °C"
+            " | Max: ${daily["temperature_2m_max"][index]} °C"
+            " | Code: ${daily["weather_code"][index]}",
+          ),
+        );
+      },
     );
   }
 }
