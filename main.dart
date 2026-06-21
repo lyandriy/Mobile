@@ -37,7 +37,7 @@ class City {
   factory City.fromJson(Map<String, dynamic> json) {
     return City(
       name: json["name"],
-      country: json["country"] ?? "",
+      country: json["country"],
       region: json["admin1"] ?? "",
       latitude: json["latitude"].toDouble(),
       longitude: json["longitude"].toDouble(),
@@ -56,26 +56,21 @@ class _WeatherPageState extends State<WeatherPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  final List<String> pages = [
-    "Currently",
-    "Today",
-    "Weekly",
-  ];
-
   final TextEditingController _controller = TextEditingController();
 
-  String displayText = "";
-
-  Position? position;
+  String locationText = "";
   String errorMessage = "";
+
   List<City> cities = [];
+
+  Map<String, dynamic>? currentWeather;
+  Map<String, dynamic>? hourlyWeather;
+  Map<String, dynamic>? dailyWeather;
 
   @override
   void initState() {
     super.initState();
-
     _tabController = TabController(length: 3, vsync: this);
-
     useGeo();
   }
 
@@ -86,96 +81,56 @@ class _WeatherPageState extends State<WeatherPage>
     super.dispose();
   }
 
-  // ---------------------------------------------------------------
-  // BUSCADOR DE CIUDADES (Ejercicio 01)
-  // ---------------------------------------------------------------
-
-  // Se llama cada vez que el usuario escribe una letra en el campo.
-  // Actualiza la lista `cities`, lo que hace aparecer el overlay
-  // con las sugerencias.
-  void onTypingChanged(String text) {
-    searchCity();
+  String weatherDescription(int code) {
+    if (code == 0) return "Clear sky";
+    if (code == 1 || code == 2 || code == 3) return "Cloudy";
+    if (code == 45 || code == 48) return "Fog";
+    if (code >= 51 && code <= 67) return "Rain";
+    if (code >= 71 && code <= 77) return "Snow";
+    if (code >= 80 && code <= 82) return "Rain showers";
+    if (code >= 95) return "Thunderstorm";
+    return "Unknown";
   }
 
-  // Busca ciudades en la API de Geocoding de Open-Meteo
-  // y guarda el resultado en `cities`.
-  Future<void> searchCity() async {
-    String city = _controller.text;
-
-    if (city.isEmpty) {
+  Future<void> useSearch() async {
+    if (_controller.text.isEmpty) {
       setState(() {
         cities = [];
       });
       return;
     }
 
+    String city = _controller.text;
+
     final url = Uri.parse(
       "https://geocoding-api.open-meteo.com/v1/search?name=$city&count=5",
     );
 
-    try {
-      final response = await http.get(url);
+    final response = await http.get(url);
+    final data = jsonDecode(response.body);
 
-      if (response.statusCode != 200) {
-        throw Exception("API error");
-      }
+    List results = data["results"] ?? [];
 
-      final data = jsonDecode(response.body);
+    List<City> cityList = [];
 
-      if (data["results"] == null) {
-        setState(() {
-          cities = [];
-          errorMessage = "City not found";
-        });
-        return;
-      }
-
-      // Convertimos cada elemento del JSON en un objeto City
-      List<City> foundCities = (data["results"] as List)
-          .map((item) => City.fromJson(item))
-          .toList();
-
-      setState(() {
-        cities = foundCities;
-        errorMessage = "";
-      });
-    } catch (e) {
-      setState(() {
-        cities = [];
-        errorMessage = "Connection error, please try again later";
-      });
+    for (var item in results) {
+      cityList.add(City.fromJson(item));
     }
+
+    setState(() {
+      cities = cityList;
+    });
   }
 
-  // Se llama cuando el usuario toca una ciudad en la lista de sugerencias.
   void selectCity(City city) {
     setState(() {
-      cities = [];
       _controller.text = city.name;
-      displayText = "${city.name}, ${city.region}, ${city.country}";
-      errorMessage = "";
-    });
-    // Próximamente (Ejercicio 02): aquí llamaremos a la API del clima
-    // usando city.latitude y city.longitude
-  }
-
-  // Se llama al presionar el botón de buscar (icono de lupa).
-  // Si hay resultados, usa directamente el primero sin mostrar la lista.
-  void useSearch() async {
-    setState(() {
-      errorMessage = "";
+      cities = [];
+      locationText = "${city.name}, ${city.region}, ${city.country}";
     });
 
-    await searchCity();
-
-    if (cities.isNotEmpty) {
-      selectCity(cities.first);
-    }
+    fetchWeather(city.latitude, city.longitude);
   }
-
-  // ---------------------------------------------------------------
-  // GEOLOCALIZACIÓN (Ejercicio 00, ya lo tenías)
-  // ---------------------------------------------------------------
 
   Future<void> useGeo() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
@@ -200,25 +155,138 @@ class _WeatherPageState extends State<WeatherPage>
 
     if (permission == LocationPermission.deniedForever) {
       setState(() {
-        errorMessage =
-            "Location permissions are permanently denied, we cannot request permissions.";
+        errorMessage = "Location permissions are permanently denied";
       });
       return;
     }
 
-    Position currentPosition = await Geolocator.getCurrentPosition();
+    Position position = await Geolocator.getCurrentPosition();
 
     setState(() {
-      position = currentPosition;
-      displayText =
-          "${currentPosition.latitude}, ${currentPosition.longitude}";
+      locationText = "${position.latitude}, ${position.longitude}";
       errorMessage = "";
+    });
+
+    fetchWeather(position.latitude, position.longitude);
+  }
+
+  Future<void> fetchWeather(double latitude, double longitude) async {
+    final url = Uri.parse(
+      "https://api.open-meteo.com/v1/forecast"
+      "?latitude=$latitude"
+      "&longitude=$longitude"
+      "&current=temperature_2m,weather_code,wind_speed_10m"
+      "&hourly=temperature_2m,weather_code,wind_speed_10m"
+      "&daily=weather_code,temperature_2m_max,temperature_2m_min"
+      "&timezone=auto",
+    );
+
+    final response = await http.get(url);
+    final data = jsonDecode(response.body);
+
+    setState(() {
+      currentWeather = data["current"];
+      hourlyWeather = data["hourly"];
+      dailyWeather = data["daily"];
     });
   }
 
-  // ---------------------------------------------------------------
-  // INTERFAZ (UI)
-  // ---------------------------------------------------------------
+  Widget currentView() {
+    if (currentWeather == null) {
+      return const Center(child: Text("Loading..."));
+    }
+
+    return Center(
+      child: Text(
+        "Currently\n\n"
+        "$locationText\n\n"
+        "Temperature: ${currentWeather!["temperature_2m"]} °C\n"
+        "Weather: ${weatherDescription(currentWeather!["weather_code"])}\n"
+        "Wind: ${currentWeather!["wind_speed_10m"]} km/h",
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontSize: 22),
+      ),
+    );
+  }
+
+  Widget todayView() {
+    if (hourlyWeather == null) {
+      return const Center(child: Text("Loading..."));
+    }
+
+    return ListView.builder(
+      itemCount: 24,
+      itemBuilder: (context, index) {
+        String time = hourlyWeather!["time"][index];
+        double temp = hourlyWeather!["temperature_2m"][index];
+        int code = hourlyWeather!["weather_code"][index];
+        double wind = hourlyWeather!["wind_speed_10m"][index];
+
+        return ListTile(
+          title: Text(time),
+          subtitle: Text(
+            "$temp °C - ${weatherDescription(code)} - $wind km/h",
+          ),
+        );
+      },
+    );
+  }
+
+  Widget weeklyView() {
+    if (dailyWeather == null) {
+      return const Center(child: Text("Loading..."));
+    }
+
+    return ListView.builder(
+      itemCount: dailyWeather!["time"].length,
+      itemBuilder: (context, index) {
+        String date = dailyWeather!["time"][index];
+        double minTemp = dailyWeather!["temperature_2m_min"][index];
+        double maxTemp = dailyWeather!["temperature_2m_max"][index];
+        int code = dailyWeather!["weather_code"][index];
+
+        return ListTile(
+          title: Text(date),
+          subtitle: Text(
+            "Min: $minTemp °C - Max: $maxTemp °C - ${weatherDescription(code)}",
+          ),
+        );
+      },
+    );
+  }
+
+  Widget pageContent(Widget view) {
+    return Column(
+      children: [
+        if (errorMessage.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text(
+              errorMessage,
+              style: const TextStyle(color: Colors.red, fontSize: 18),
+            ),
+          ),
+        Expanded(child: view),
+        if (cities.isNotEmpty)
+          Expanded(
+            child: ListView.builder(
+              itemCount: cities.length,
+              itemBuilder: (context, index) {
+                City city = cities[index];
+
+                return ListTile(
+                  title: Text(city.name),
+                  subtitle: Text("${city.region}, ${city.country}"),
+                  onTap: () {
+                    selectCity(city);
+                  },
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -229,7 +297,9 @@ class _WeatherPageState extends State<WeatherPage>
             Expanded(
               child: TextField(
                 controller: _controller,
-                onChanged: onTypingChanged,
+                onChanged: (text) {
+                  useSearch();
+                },
                 decoration: const InputDecoration(
                   hintText: "Search city...",
                   border: OutlineInputBorder(),
@@ -247,56 +317,12 @@ class _WeatherPageState extends State<WeatherPage>
           ],
         ),
       ),
-      body: Stack(
+      body: TabBarView(
+        controller: _tabController,
         children: [
-          // Capa de abajo: las 3 tabs de siempre
-          TabBarView(
-            controller: _tabController,
-            children: pages.map((tab) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (errorMessage.isNotEmpty)
-                      Text(
-                        errorMessage,
-                        style:
-                            const TextStyle(color: Colors.red, fontSize: 18),
-                        textAlign: TextAlign.center,
-                      )
-                    else
-                      Text(
-                        displayText.isEmpty ? tab : "$tab\n$displayText",
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 24),
-                      ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-
-          // Capa de arriba: lista de sugerencias.
-          // Solo se muestra si `cities` tiene elementos.
-          if (cities.isNotEmpty)
-            Positioned.fill(
-              child: Container(
-                color: Colors.white,
-                child: ListView.builder(
-                  itemCount: cities.length,
-                  itemBuilder: (context, index) {
-                    final city = cities[index];
-                    return ListTile(
-                      title: Text(city.name),
-                      subtitle: Text("${city.region}, ${city.country}"),
-                      onTap: () {
-                        selectCity(city);
-                      },
-                    );
-                  },
-                ),
-              ),
-            ),
+          pageContent(currentView()),
+          pageContent(todayView()),
+          pageContent(weeklyView()),
         ],
       ),
       bottomNavigationBar: BottomAppBar(

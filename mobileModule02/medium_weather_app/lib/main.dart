@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'widgets/weather_widget.dart';
+import 'models/current_weather.dart';
+import 'models/hourly_weather.dart';
+import 'models/city.dart';
+import 'models/daily_weather.dart';
 
 void main() {
   runApp(const AppWeather());
@@ -15,32 +20,6 @@ class AppWeather extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       home: WeatherPage(),
-    );
-  }
-}
-
-class City {
-  final String name;
-  final String country;
-  final String region;
-  final double latitude;
-  final double longitude;
-
-  City({
-    required this.name,
-    required this.country,
-    required this.region,
-    required this.latitude,
-    required this.longitude,
-  });
-
-  factory City.fromJson(Map<String,dynamic> json) {
-    return City(
-      name: json["name"],
-      country: json["country"],
-      region: json["admin1"] ?? "",
-      latitude: json["latitude"].toDouble(),
-      longitude: json["longitude"].toDouble(),
     );
   }
 }
@@ -69,6 +48,10 @@ class _WeatherPageState extends State<WeatherPage>
   Position? position;
   String errorMessage = "";
   List<City> cities = [];
+  List<HourlyWeather> todayWeather = [];
+  List<DailyWeather> weeklyWeather = [];
+  CurrentWeather? currentWeather;
+  City? selectedCity;
   
 
   @override
@@ -103,39 +86,152 @@ class _WeatherPageState extends State<WeatherPage>
     
   }
 
+  String getWeatherDescription(int code) {
+    switch (code) {
+      case 0:
+        return "Clear sky";
+
+      case 1:
+        return "Mainly clear";
+
+      case 2:
+        return "Partly cloudy";
+
+      case 3:
+        return "Overcast";
+
+      case 61:
+        return "Rain";
+
+      default:
+        return "Unknown";
+    }
+  }
+
+  Future<void> getCurrentWeather(double latitude, double longitude) async {
+
+    final url = Uri.parse(
+      "https://api.open-meteo.com/v1/forecast"
+      "?latitude=$latitude"
+      "&longitude=$longitude"
+      "&current=temperature_2m,weather_code,wind_speed_10m"
+      "&hourly=temperature_2m,weather_code,wind_speed_10m"
+      "&daily=weather_code,temperature_2m_max,temperature_2m_min"
+      "&forecast_days=7",
+    );
+    try{
+      final response = await http.get(url);
+
+      if (response.statusCode != 200) {
+        setState(() {
+          errorMessage = "Unable to get weather";
+        });
+        return;
+      }
+
+      final data = jsonDecode(response.body);
+
+      List<HourlyWeather> hourlyList = [];
+
+      List times = data["hourly"]["time"];
+      List temperatures = data["hourly"]["temperature_2m"];
+      List windSpeeds = data["hourly"]["wind_speed_10m"];
+      List weatherCodes = data["hourly"]["weather_code"];
+
+      for (int i = 0; i < times.length; i++) {
+        hourlyList.add(
+          HourlyWeather(
+            time: times[i],
+            temperature: temperatures[i].toDouble(),
+            windSpeed: windSpeeds[i].toDouble(),
+            weatherCode: weatherCodes[i],
+          ),
+        );
+      }
+
+      List<DailyWeather> dailyList = [];
+
+      List dates = data["daily"]["time"];
+      List maxTemperatures = data["daily"]["temperature_2m_max"];
+      List minTemperatures = data["daily"]["temperature_2m_min"];
+      List dailyWeatherCodes = data["daily"]["weather_code"];
+
+      for (int i = 0; i < dates.length; i++) {
+        dailyList.add(
+          DailyWeather(
+            date: dates[i],
+            maxTemperature: maxTemperatures[i].toDouble(),
+            minTemperature: minTemperatures[i].toDouble(),
+            weatherCode: dailyWeatherCodes[i],
+          ),
+        );
+      }
+
+      setState(() {
+        currentWeather = CurrentWeather(
+          temperature: data["current"]["temperature_2m"].toDouble(),
+          windSpeed: data["current"]["wind_speed_10m"].toDouble(),
+          weatherCode: data["current"]["weather_code"],
+        );
+        todayWeather = hourlyList;
+        weeklyWeather = dailyList;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = "Connection error";
+      });
+    }
+  }
+
   Future<void> searchCity() async {
     String city = _controller.text;
 
     final url = Uri.parse(
-      "https://geocoding-api.open-meteo.com/v1/search?name=$city&count=5",
+      "https://geocoding-api.open-meteo.com/v1/sear222ch?name=$city&count=5",
     );
 
-    final response = await http.get(url);
+    try{
+      final response = await http.get(url);
 
-    if (response.statusCode != 200) {
+      if (response.statusCode != 200) {
+        setState(() {
+          errorMessage = "Unable to search city";
+        });
+        return;
+      }
+
+      final data = jsonDecode(response.body);
+
+      List results = data["results"] ?? [];
+
+      if (results.isEmpty) {
+        setState(() {
+          errorMessage = "City not found";
+          cities = [];
+        });
+        return;
+      }
+
+      List<City> cityList = [];
+
+      for (var city in results) {
+        cityList.add(City.fromJson(city));
+      }
+
       setState(() {
-        errorMessage = "Unable to search city";
+        cities = cityList;
+        errorMessage = "";
       });
-      return;
+    } catch (e) {
+      setState(() {
+        errorMessage = "Connection error";
+      });
     }
-
-    final data = jsonDecode(response.body);
-
-    List results = data["results"] ?? [];
-
-    List<City> cityList = [];
-
-    for (var city in results) {
-      cityList.add(City.fromJson(city));
-    }
-
-    setState(() {
-      cities = cityList;
-    });
   }
 
-  void selectCity(City city) {
+  void selectCity(City city) async {
     setState(() {
+      selectedCity = city;
       displayText =
           "${city.name}, ${city.region}, ${city.country}";
 
@@ -143,6 +239,11 @@ class _WeatherPageState extends State<WeatherPage>
 
       cities = [];
     });
+
+    await getCurrentWeather(
+      city.latitude,
+      city.longitude,
+    );
   }
 
   Future<void> useGeo() async {
@@ -181,13 +282,28 @@ class _WeatherPageState extends State<WeatherPage>
 
     setState(() {
       position = currentPosition;
-      displayText = "${currentPosition.latitude}, ${currentPosition.longitude}";
+      displayText = "${currentPosition.latitude}, ${currentPosition.longitude}"; 
       errorMessage = "";
     });
+
+    await getCurrentWeather(
+      currentPosition.latitude,
+      currentPosition.longitude,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+
+    String location = "Unknown location";
+
+    if (selectedCity != null) {
+      location =
+          "${selectedCity!.name}, ${selectedCity!.region}, ${selectedCity!.country}";
+    } else if (position != null) {
+      location =
+          "${position!.latitude}, ${position!.longitude}";
+    }
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -227,28 +343,51 @@ class _WeatherPageState extends State<WeatherPage>
                   style: const TextStyle(color: Colors.red, fontSize: 18),
                 )
               else
-                Text(
-                  displayText.isEmpty ? tab : "$tab\n$displayText",
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 24),
+                Column(
+                  children: [
+                    Text(
+                      displayText.isEmpty ? tab : "$tab\n$displayText",
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 24),
+                    ),
+
+                    if (currentWeather != null)
+                      CurrentWeatherWidget(
+                        weather: currentWeather!,
+                        location: location,
+                        description: getWeatherDescription(
+                          currentWeather!.weatherCode,
+                      ),
+                    ),
+                  ],
                 ),
               Expanded(
-                child: ListView.builder(
-                  itemCount: cities.length,
-                  itemBuilder: (context, index) {
-                    City city = cities[index];
+                child: cities.isNotEmpty
+                    ? ListView.builder(
+                        itemCount: cities.length,
+                        itemBuilder: (context, index) {
+                          City city = cities[index];
 
-                    return ListTile(
-                      title: Text(city.name),
-                      subtitle: Text(
-                        "${city.region}, ${city.country}",
-                      ),
-                      onTap: () {
-                        selectCity(city);
-                      },
-                    );
-                  },
-                ),
+                          return ListTile(
+                            title: Text(city.name),
+                            subtitle: Text(
+                              "${city.region}, ${city.country}",
+                            ),
+                            onTap: () {
+                              selectCity(city);
+                            },
+                          );
+                        },
+                      )
+                    : tab == "Today" && todayWeather.isNotEmpty
+                        ? TodayWeatherWidget(
+                            todayWeather: todayWeather,
+                          )
+                        : tab == "Weekly" && weeklyWeather.isNotEmpty
+                            ? WeeklyWeatherWidget(
+                                weeklyWeather: weeklyWeather,
+                              )
+                            : const SizedBox(),
               ),
             ],
           );
@@ -268,3 +407,4 @@ class _WeatherPageState extends State<WeatherPage>
     );
   }
 }
+
