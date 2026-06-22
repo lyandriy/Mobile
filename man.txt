@@ -8,3 +8,48 @@ https://open-meteo.com/en/docs
 https://open-meteo.com/
 https://api.flutter.dev/flutter/dart-convert/jsonDecode.html
 
+Paso 1: instalar herramientas
+
+Desde la terminal:
+
+dart pub global activate flutterfire_cli
+
+Después, dentro de tu proyecto:
+
+cd mobileModule04/diary_app
+flutterfire configure
+
+Ese comando te pedirá elegir un proyecto Firebase o crear uno nuevo.
+
+Paso 2: añade Firebase Auth
+
+Dentro de diary_app:
+
+flutter pub add firebase_core
+flutter pub add firebase_auth
+flutter pub add google_sign_in
+
+Firebase indica que para usar Auth en Flutter hay que añadir firebase_auth e importar package:firebase_auth/firebase_auth.dart.
+
+Paso 3: en Firebase Console
+
+Entra en Firebase Console:
+
+Crea un proyecto.
+Ve a Authentication.
+En Sign-in method, activa Google.
+Guarda.
+
+Firebase también indica que Google debe estar activado como proveedor de inicio de sesión.
+
+Paso 4: Android
+
+Para que Google Sign-In funcione en Android físico, normalmente necesitarás añadir la SHA-1 de tu app en Firebase. Firebase lo menciona específicamente para Google Sign-In en Flutter/Android.
+
+Pero vamos paso a paso: primero ejecuta hasta flutterfire configure.
+
+Cuando termines, dime si se ha creado este archivo:
+
+lib/firebase_options.dart
+
+y si flutter run -d chrome y flutter run siguen arrancando sin errores.
