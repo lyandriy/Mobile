@@ -52,6 +52,7 @@ class _WeatherPageState extends State<WeatherPage>
   List<DailyWeather> weeklyWeather = [];
   CurrentWeather? currentWeather;
   City? selectedCity;
+  bool selectingCity = false;
   
 
   @override
@@ -83,6 +84,10 @@ class _WeatherPageState extends State<WeatherPage>
     }
 
     await searchCity();
+
+     if (cities.isNotEmpty) {
+      selectCity(cities[0]);
+    }
     
   }
 
@@ -138,7 +143,7 @@ class _WeatherPageState extends State<WeatherPage>
       List windSpeeds = data["hourly"]["wind_speed_10m"];
       List weatherCodes = data["hourly"]["weather_code"];
 
-      for (int i = 0; i < times.length; i++) {
+      for (int i = 0; i < 24; i++) {
         hourlyList.add(
           HourlyWeather(
             time: times[i],
@@ -230,15 +235,19 @@ class _WeatherPageState extends State<WeatherPage>
   }
 
   void selectCity(City city) async {
+    selectingCity = true;
+
     setState(() {
       selectedCity = city;
       displayText =
           "${city.name}, ${city.region}, ${city.country}";
 
       _controller.text = city.name;
-
+      errorMessage = "";
       cities = [];
     });
+
+    selectingCity = false;
 
     await getCurrentWeather(
       city.latitude,
@@ -328,7 +337,9 @@ class _WeatherPageState extends State<WeatherPage>
                 child: TextField(
                   controller: _controller,
                   onChanged: (text) {
-                    useSearch();
+                     if (!selectingCity) {
+                      searchCity();
+                     }
                   },
                   decoration: const InputDecoration(
                     hintText: "Search city...",
@@ -375,7 +386,7 @@ class _WeatherPageState extends State<WeatherPage>
                         style: const TextStyle(fontSize: 24),
                       ),
 
-                      if (currentWeather != null)
+                      if (tab == "Currently" && currentWeather != null)
                         CurrentWeatherWidget(
                           weather: currentWeather!,
                           location: location,
@@ -406,10 +417,12 @@ class _WeatherPageState extends State<WeatherPage>
                       : tab == "Today" && todayWeather.isNotEmpty
                           ? TodayWeatherWidget(
                               todayWeather: todayWeather,
+                               getDescription: getWeatherDescription,
                             )
                           : tab == "Weekly" && weeklyWeather.isNotEmpty
                               ? WeeklyWeatherWidget(
                                   weeklyWeather: weeklyWeather,
+                                  getDescription: getWeatherDescription,
                                 )
                               : const SizedBox(),
                 ),
