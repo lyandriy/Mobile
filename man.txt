@@ -53,3 +53,5 @@ Cuando termines, dime si se ha creado este archivo:
 lib/firebase_options.dart
 
 y si flutter run -d chrome y flutter run siguen arrancando sin errores.
+
+flutter pub get       

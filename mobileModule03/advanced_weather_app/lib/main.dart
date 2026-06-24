@@ -85,7 +85,7 @@ class _WeatherPageState extends State<WeatherPage>
 
     await searchCity();
 
-     if (cities.isNotEmpty) {
+    if (cities.isNotEmpty) {
       selectCity(cities[0]);
     }
     
