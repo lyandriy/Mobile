@@ -369,64 +369,65 @@ class _WeatherPageState extends State<WeatherPage>
         child: TabBarView(
           controller: _tabController,
           children: pages.map((tab) {
-            return Column(
-              children: [
-                const SizedBox(height: 20),
-                if (errorMessage.isNotEmpty)
-                  Text(
-                    errorMessage,
-                    style: const TextStyle(color: Colors.red, fontSize: 18),
-                  )
-                else
-                  Column(
-                    children: [
-                      Text(
-                        displayText.isEmpty ? tab : "$tab\n$displayText",
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 24),
-                      ),
-
-                      if (tab == "Currently" && currentWeather != null)
-                        CurrentWeatherWidget(
-                          weather: currentWeather!,
-                          location: location,
-                          description: getWeatherDescription(
-                            currentWeather!.weatherCode,
+            return SingleChildScrollView(
+              child:  Column(
+                children: [
+                  const SizedBox(height: 20),
+                  if (errorMessage.isNotEmpty)
+                    Text(
+                      errorMessage,
+                      style: const TextStyle(color: Colors.red, fontSize: 18),
+                    )
+                  else
+                    Column(
+                      children: [
+                        Text(
+                          displayText.isEmpty ? tab : "$tab\n$displayText",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 24),
                         ),
-                      ),
-                    ],
-                  ),
-                Expanded(
-                  child: cities.isNotEmpty
-                      ? ListView.builder(
-                          itemCount: cities.length,
-                          itemBuilder: (context, index) {
-                            City city = cities[index];
 
-                            return ListTile(
-                              title: Text(city.name),
-                              subtitle: Text(
-                                "${city.region}, ${city.country}",
-                              ),
-                              onTap: () {
-                                selectCity(city);
-                              },
-                            );
-                          },
-                        )
-                      : tab == "Today" && todayWeather.isNotEmpty
-                          ? TodayWeatherWidget(
-                              todayWeather: todayWeather,
-                               getDescription: getWeatherDescription,
-                            )
-                          : tab == "Weekly" && weeklyWeather.isNotEmpty
-                              ? WeeklyWeatherWidget(
-                                  weeklyWeather: weeklyWeather,
-                                  getDescription: getWeatherDescription,
-                                )
-                              : const SizedBox(),
-                ),
-              ],
+                        if (tab == "Currently" && currentWeather != null)
+                          CurrentWeatherWidget(
+                            weather: currentWeather!,
+                            location: location,
+                            description: getWeatherDescription(
+                              currentWeather!.weatherCode,
+                          ),
+                        ),
+                      ],
+                    ),
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.55,
+                    child: cities.isNotEmpty
+                        ? ListView.builder(
+                            itemCount: cities.length,
+                            itemBuilder: (context, index) {
+                              City city = cities[index];
+                  
+                              return ListTile(
+                                title: Text(city.name),
+                                subtitle: Text("${city.region}, ${city.country}"),
+                                onTap: () {
+                                  selectCity(city);
+                                },
+                              );
+                            },
+                          )
+                        : tab == "Today" && todayWeather.isNotEmpty
+                            ? TodayWeatherWidget(
+                                todayWeather: todayWeather,
+                                getDescription: getWeatherDescription,
+                              )
+                            : tab == "Weekly" && weeklyWeather.isNotEmpty
+                                ? WeeklyWeatherWidget(
+                                    weeklyWeather: weeklyWeather,
+                                    getDescription: getWeatherDescription,
+                                  )
+                                : const SizedBox(),
+                  ),
+                ],
+              ),
             );
           },).toList(),
         ),

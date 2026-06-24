@@ -28,3 +28,6 @@
 |-------------------------------------------------------------------|
 | Domingo (27)    |            |       |            |       |       |
 |-------------------------------------------------------------------|
+
+https://xnaahbbnbsydufziewzf.supabase.co/rest/v1/
+sb_publishable_jY5_SgM6J9_RScVIPZWXMA_Pk_11ZEE

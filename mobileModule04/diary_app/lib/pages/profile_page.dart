@@ -21,6 +21,9 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Diary'),
+      ),
       body: ListView.builder(
         itemCount: _entries.length,
         itemBuilder: (context, index) {
@@ -31,8 +34,7 @@ class _ProfilePageState extends State<ProfilePage> {
             subtitle: Text(entry.feeling),
           );
         },
-      )
+      ),
     );
   }
 }
-creo que todo esto esta mal

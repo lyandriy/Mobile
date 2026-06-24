@@ -2,8 +2,16 @@ import 'package:flutter/material.dart';
 import 'pages/login_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/authentication_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://xnaahbbnbsydufziewzf.supabase.co',
+    publishableKey: 'sb_publishable_jY5_SgM6J9_RScVIPZWXMA_Pk_11ZEE',
+  );
+
   runApp(const DiaryApp());
 }
 
