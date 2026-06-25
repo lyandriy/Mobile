@@ -1,31 +1,34 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 
-class LoginPage extends StatelessWidget {
-  LoginPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
   final AuthService _authService = AuthService();
 
-  void _goToProfile(BuildContext context) {
-    Navigator.pushNamed(context, '/profile');
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_checkSession);
   }
 
-  void _goToAuthentication(BuildContext context) {
-    Navigator.pushNamed(context, '/auth');
-  }
-
-  Future<void> _handleLogin(BuildContext context) async {
+  Future<void> _checkSession() async {
     final bool isLoggedIn = await _authService.isLoggedIn();
 
-    if (!context.mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     if (isLoggedIn) {
-      _goToProfile(context);
-    } else {
-      _goToAuthentication(context);
+      Navigator.pushReplacementNamed(context, '/profile');
     }
+  }
+
+  void _goToAuthentication() {
+    Navigator.pushNamed(context, '/auth');
   }
 
   @override
@@ -33,11 +36,9 @@ class LoginPage extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: ElevatedButton(
-          onPressed: () {
-            _handleLogin(context);
-          },
+          onPressed: _goToAuthentication,
           child: const Text('Login'),
-         ),
+        ),
       ),
     );
   }

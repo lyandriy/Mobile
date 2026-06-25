@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/diary_entry.dart';
+import 'entry_detail_page.dart';
+import '../services/diary_service.dart';
+import '../services/auth_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -9,20 +12,51 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final List<DiaryEntry> _entries = [
-    DiaryEntry(
-      title: 'First entry',
-      feeling: '😊',
-      content: 'Today I started my diary app.',
-      date: DateTime.now(),
-    ),
-  ];
+  List<DiaryEntry> _entries = [];
+  final DiaryService _diaryService = DiaryService();
+  final AuthService _authService = AuthService();
+
+  Future<void> _loadEntries() async {
+    final entries = await _diaryService.getEntries();
+
+    setState(() {
+      _entries = entries;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEntries();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Diary'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              print('Logout pressed');
+          
+              await _authService.signOut();
+          
+              print('Signed out');
+          
+              if (!context.mounted) {
+                return;
+              }
+          
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/',
+                (route) => false,
+              );
+            },
+          ),
+        ],
       ),
       body: ListView.builder(
         itemCount: _entries.length,
@@ -32,8 +66,41 @@ class _ProfilePageState extends State<ProfilePage> {
           return ListTile(
             title: Text(entry.title),
             subtitle: Text(entry.feeling),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () async {
+                await _diaryService.deleteEntry(entry);
+                await _loadEntries();
+              },
+            ),
+            onTap: (){
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EntryDetailPage(
+                    entry: entry,
+                  ),
+                ),
+              );
+            },
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final DiaryEntry? newEntry =
+              await Navigator.pushNamed(context, '/create') as DiaryEntry?;
+
+          if (!context.mounted) {
+            return;
+          }
+
+          if (newEntry != null) {
+            await _diaryService.addEntry(newEntry);
+            await _loadEntries();
+          }
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }

@@ -20,4 +20,8 @@ class AuthService {
       OAuthProvider.github,
     );
   }
+
+  Future<void> signOut() {
+    return _client.auth.signOut();
+  }
 }

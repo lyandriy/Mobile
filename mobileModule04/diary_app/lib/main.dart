@@ -3,6 +3,7 @@ import 'pages/login_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/authentication_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'pages/create_entry_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,9 +26,10 @@ class DiaryApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/': (context) => LoginPage(),
+        '/': (context) => const LoginPage(),
         '/profile': (context) => const ProfilePage(),
         '/auth': (context) => AuthenticationPage(),
+        '/create': (context) => const CreateEntryPage(),
       },
     );
   }
