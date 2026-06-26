@@ -15,12 +15,18 @@ class _ProfilePageState extends State<ProfilePage> {
   List<DiaryEntry> _entries = [];
   final DiaryService _diaryService = DiaryService();
   final AuthService _authService = AuthService();
+  bool _isLoading = true;
 
   Future<void> _loadEntries() async {
     final entries = await _diaryService.getEntries();
 
+    if (!mounted) {
+      return;
+    }
+
     setState(() {
       _entries = entries;
+      _isLoading = false;
     });
   }
 
@@ -39,11 +45,7 @@ class _ProfilePageState extends State<ProfilePage> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              print('Logout pressed');
-          
               await _authService.signOut();
-          
-              print('Signed out');
           
               if (!context.mounted) {
                 return;
@@ -58,7 +60,11 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
-      body: ListView.builder(
+      body: _isLoading
+        ? const Center(
+          child: CircularProgressIndicator(),
+        )
+      : ListView.builder(
         itemCount: _entries.length,
         itemBuilder: (context, index) {
           final entry = _entries[index];

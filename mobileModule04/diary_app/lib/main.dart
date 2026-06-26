@@ -11,6 +11,9 @@ Future<void> main() async {
   await Supabase.initialize(
     url: 'https://xnaahbbnbsydufziewzf.supabase.co',
     publishableKey: 'sb_publishable_jY5_SgM6J9_RScVIPZWXMA_Pk_11ZEE',
+    authOptions: const FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.pkce,
+    ),
   );
 
   runApp(const DiaryApp());
