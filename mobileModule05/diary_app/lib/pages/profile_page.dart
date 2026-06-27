@@ -4,6 +4,7 @@ import 'entry_detail_page.dart';
 import '../services/diary_service.dart';
 import '../services/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -18,6 +19,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final AuthService _authService = AuthService();
   bool _isLoading = true;
   String _userName = '';
+  String _avatarUrl = '';
 
   Future<void> _loadEntries() async {
     final entries = await _diaryService.getEntries();
@@ -64,6 +66,7 @@ class _ProfilePageState extends State<ProfilePage> {
     user?.userMetadata?['name'] ??
     user?.email ??
     'User';
+    _avatarUrl = user?.userMetadata?['avatar_url'] ?? '';
   }
 
   @override
@@ -74,13 +77,6 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         title: const Text('Diary'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.calendar_month),
-            onPressed: () async {
-              await Navigator.pushNamed(context, '/agenda');
-              await _loadEntries();
-            },
-          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
@@ -104,11 +100,29 @@ class _ProfilePageState extends State<ProfilePage> {
         : ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(
-                'Hello, $_userName',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+              Center(
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 45,
+                      backgroundImage: _avatarUrl.isNotEmpty
+                          ? NetworkImage(_avatarUrl)
+                          : null,
+                      child: _avatarUrl.isEmpty
+                          ? const Icon(Icons.person, size: 45)
+                          : null,
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Text(
+                      _userName,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
@@ -135,7 +149,9 @@ class _ProfilePageState extends State<ProfilePage> {
               ...lastTwoEntries.map((entry) {
                 return ListTile(
                   title: Text(entry.title),
-                  subtitle: Text('${entry.date} - ${entry.feeling}'),
+                  subtitle: Text(
+                    '${DateFormat('dd/MM/yyyy').format(entry.date)} - ${entry.feeling}',
+                  ),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () async {
@@ -172,6 +188,25 @@ class _ProfilePageState extends State<ProfilePage> {
           }
         },
         child: const Icon(Icons.add),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 0,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_month),
+            label: 'Agenda',
+          ),
+        ],
+        onTap: (index) async {
+          if (index == 1) {
+            await Navigator.pushNamed(context, '/agenda');
+            await _loadEntries();
+          }
+        },
       ),
     );
   }

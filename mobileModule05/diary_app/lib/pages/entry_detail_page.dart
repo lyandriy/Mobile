@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/diary_entry.dart';
+import 'package:intl/intl.dart';
 
 class EntryDetailPage extends StatelessWidget {
   const EntryDetailPage({
@@ -22,7 +23,7 @@ class EntryDetailPage extends StatelessWidget {
           children: [
             Text('Feeling: ${entry.feeling}'),
             const SizedBox(height: 10),
-            Text('Date: ${entry.date}'),
+            Text('Date: ${DateFormat('dd/MM/yyyy').format(entry.date)}'),
             const SizedBox(height: 20),
             Text(entry.content),
           ],
